@@ -1,0 +1,12 @@
+# ninja log v7
+31	2073	8168097167663445	sql_practice_autogen/timestamp	10e04ac09c3a596a
+31	2073	8168097167663445	sql_practice_autogen/mocs_compilation.cpp	10e04ac09c3a596a
+31	2073	8168097167663445	D:/Projects/sql_practice/build/Desktop_Qt_6_12_0_MinGW_64_bit_Debug/sql_practice_autogen/timestamp	10e04ac09c3a596a
+31	2073	8168097167663445	D:/Projects/sql_practice/build/Desktop_Qt_6_12_0_MinGW_64_bit_Debug/sql_practice_autogen/mocs_compilation.cpp	10e04ac09c3a596a
+2079	5586	8168097169289482	CMakeFiles/sql_practice.dir/sql_practice_autogen/mocs_compilation.cpp.obj	ed706b464d010e61
+2171	5683	8168097170209378	CMakeFiles/sql_practice.dir/mainwindow.cpp.obj	b112735433056b77
+37	505	8168097392710530	sql_practice_autogen/timestamp	10e04ac09c3a596a
+37	505	8168097392710530	sql_practice_autogen/mocs_compilation.cpp	10e04ac09c3a596a
+37	505	8168097392710530	D:/Projects/sql_practice/build/Desktop_Qt_6_12_0_MinGW_64_bit_Debug/sql_practice_autogen/timestamp	10e04ac09c3a596a
+37	505	8168097392710530	D:/Projects/sql_practice/build/Desktop_Qt_6_12_0_MinGW_64_bit_Debug/sql_practice_autogen/mocs_compilation.cpp	10e04ac09c3a596a
+558	4057	8168097397926393	CMakeFiles/sql_practice.dir/mainwindow.cpp.obj	b112735433056b77
