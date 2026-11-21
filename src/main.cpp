@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QSqlDatabase>
+#include <QSqlError>
 
 int main(int argc, char *argv[])
 {
