@@ -24,4 +24,9 @@ private:
     QPointF m_position;
 };
 
+inline bool operator==(const Node& a, const Node& b)
+{
+    return a.id() == b.id() && a.label() == b.label() && a.position() == b.position();
+}
+
 #endif // NODE_H

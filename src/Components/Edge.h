@@ -23,4 +23,10 @@ private:
     bool m_directed;
 };
 
+inline bool operator==(const Edge& a, const Edge& b)
+{
+    return a.id() == b.id() && a.src() == b.src() && a.dest() == b.dest()
+           && a.weight() == b.weight() && a.directed() == b.directed();
+}
+
 #endif // EDGE_H
