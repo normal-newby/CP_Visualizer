@@ -33,6 +33,7 @@ public:
     void removeNode(int id); // also removes edges
 
     //edges
+    int addEdge(int src, int dest); // weight is 0, directed false
     int addEdge(int src, int dest, double weight, bool directed); // returns -1 if src/dest invalid
     void removeEdge(int id);
 
