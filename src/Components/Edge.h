@@ -1,7 +1,8 @@
 #ifndef EDGE_H
 #define EDGE_H
 
-class Edge{
+class Edge
+{
 public:
     explicit Edge(int id, int src, int dest, double weight, bool directed);
 

@@ -7,7 +7,8 @@
 #include "Node.h"
 #include "Edge.h"
 
-class Graph {
+class Graph
+{
 public:
     Graph() = default;
     explicit Graph(int id, const QString& name, const QString& description);

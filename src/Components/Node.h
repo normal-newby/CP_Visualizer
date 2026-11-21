@@ -4,7 +4,8 @@
 #include <QString>
 #include <QPointF>
 
-class Node {
+class Node
+{
 public:
     explicit Node(int id, const QString& label, const QPointF& position);
 
