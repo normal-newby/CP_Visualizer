@@ -3,6 +3,17 @@ project(CP_Visualizer LANGUAGES CXX)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql Test)
 
+qt_add_library(cp_core STATIC
+    src/Components/Graph.h
+    src/Components/Graph.cpp
+    src/Components/Node.h
+    src/Components/Node.cpp
+    src/Components/Edge.h
+    src/Components/Edge.cpp
+)
+target_include_directories(cp_core PUBLIC src)
+target_link_libraries(cp_core PUBLIC Qt::Core)
+
 qt_standard_project_setup()
 
 qt_add_executable(CP_Visualizer
@@ -11,18 +22,11 @@ qt_add_executable(CP_Visualizer
     src/mainwindow.cpp
     src/mainwindow.h
     src/mainwindow.ui
-
-    #Components
-    src/Components/Graph.h
-    src/Components/Node.h
-    src/Components/Edge.h
-    src/Components/Edge.cpp
-    src/Components/Node.cpp
 )
 
 target_link_libraries(CP_Visualizer
     PRIVATE
-        Qt::Core
+        cp_core
         Qt::Widgets
         Qt::Sql
 )
@@ -46,8 +50,7 @@ enable_testing()
 
 function(cp_add_test name)
     qt_add_executable(${name}_test src/Tests/${name}_test.cpp)
-    target_include_directories(${name}_test PRIVATE src)
-    target_link_libraries(${name}_test PRIVATE Qt::Core Qt::Test)
+    target_link_libraries(${name}_test PRIVATE cp_core Qt::Test)
     add_test(NAME ${name}_test COMMAND ${name}_test)
 endfunction()
 
