@@ -19,12 +19,18 @@ qt_add_library(cp_persistence STATIC
 )
 target_link_libraries(cp_persistence PUBLIC cp_core Qt::Sql)
 
+qt_add_resources(cp_persistence "schema"
+    PREFIX "/"
+    BASE src/persistence
+    FILES src/persistence/schema.sql)
+
 qt_add_executable(CP_Visualizer
     WIN32 MACOSX_BUNDLE
     src/main.cpp
     src/main-window.cpp
     src/main-window.h
     src/main-window.ui
+    src/persistence/schema.sql
 )
 
 target_link_libraries(CP_Visualizer
