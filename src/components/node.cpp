@@ -1,4 +1,4 @@
-#include "Node.h"
+#include "node.h"
 
 Node::Node(int id, const QString& label, const QPointF& position)
     : m_id(id)

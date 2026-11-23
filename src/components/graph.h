@@ -4,8 +4,8 @@
 #include <QString>
 #include <QPointF>
 #include <unordered_map>
-#include "Node.h"
-#include "Edge.h"
+#include "node.h"
+#include "edge.h"
 
 class Graph
 {

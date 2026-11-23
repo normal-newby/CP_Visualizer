@@ -1,6 +1,6 @@
-#include "Graph.h"
-#include "Node.h"
-#include "Edge.h"
+#include "graph.h"
+#include "node.h"
+#include "edge.h"
 
 Graph::Graph(int id, const QString& name, const QString& description)
     : m_id(id)

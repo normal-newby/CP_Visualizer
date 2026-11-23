@@ -1,6 +1,6 @@
 #include <QTest>
 
-#include "Components/Graph.h"
+#include "components/graph.h"
 
 /* Remember to use:
  * Arrange
@@ -414,4 +414,4 @@ void TestGraph::defaultGraph_isEmptyWithIdMinusOne()
 }
 
 QTEST_APPLESS_MAIN(TestGraph)
-#include "graph_test.moc"
+#include "graph-test.moc"

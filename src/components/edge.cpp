@@ -1,4 +1,4 @@
-#include "Edge.h"
+#include "edge.h"
 
 Edge::Edge(int id, int src, int dest, double weight, bool directed)
     : m_id(id)
