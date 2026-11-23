@@ -1,0 +1,10 @@
+# Build output (Qt Creator creates one folder per kit)
+build/
+
+# Qt Creator per-user settings
+.qtcreator/
+*.user
+*.user.*
+
+# Qt Creator autosave files
+*.autosave
