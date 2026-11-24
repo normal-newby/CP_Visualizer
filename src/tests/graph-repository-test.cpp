@@ -79,6 +79,15 @@ static std::vector<std::tuple<QString, QString, double, bool>> edgeSignature(con
     return out;
 }
 
+static int nodeByLabel(const Graph& g, const QString& label)
+{
+    for (const auto& [id, node] : g.nodes())
+    {
+        if (node.label() == label) return id;
+    }
+    return -1;
+}
+
 /* default graph, covers:
  * bidirectional directed
  * parallel
@@ -134,25 +143,129 @@ void TestGraphRepository::save_newGraph_returnsPositiveId()
 
 void TestGraphRepository::save_emptyGraph_succeeds()
 {
-    const Graph empty = new Graph(-1, "Empty", "");
+    Graph empty(-1, "Empty", "");
 
     std::optional<int> id = m_repo->save(empty);
 
     QVERIFY(id.has_value());
     QVERIFY(*id > 0);
 }
+
 void TestGraphRepository::save_duplicateName_failsAndReturnsNullopt()
 {
     const Graph original = makeSampleGraph();
-    Graph duplicate = new Graph();
-    duplicate.setName(original.name());
+    Graph duplicate(-1, original.name(), "");
 
     std::optional<int> original_id = m_repo->save(original);
     std::optional<int> duplicate_id = m_repo->save(duplicate);
 
-    QVERITY(original_id.has_value());
+    QVERIFY(original_id.has_value());
     QCOMPARE(!duplicate_id.has_value());
 }
+
+// existing
+
+void TestGraphRepository::save_afterEdit_keepsSameId()
+{
+    Graph graph = makeSampleGraph();
+
+    std::optional<int> first_save = m_repo->save(graph);
+    graph.setName(updated);
+    std::optional<int> second_save = m_repo->save(graph);
+
+    QVERIFY(first_save.has_value());
+    QVERIFY(second_save.has_value());
+    QCOMPARE(*first_save, *second_save);
+}
+
+void TestGraphRepository::save_afterRemovingNode_nodeAndEdgesGoneAfterLoad()
+{
+    Graph graph = makeSampleGraph();
+    std::optional<int> id = m_repo->save(graph);
+    QVERIFY(id.has_value());
+    std::optional<Graph> loaded = m_repo->load(*id);
+    QVERIFY(loaded.has_value());
+    Graph changed = *loaded;
+
+    int cId = nodeByLabel(changed, "C");
+    QVERIFY(cId != -1);
+    changed.removeNode(cId);
+
+    std::optional<int> changed_id = m_repo->save(changed);
+    QVERIFY(changed_id.has_value());
+    std::optional<Graph> reloaded = m_repo->load(*id);
+
+    QVERIFY(reloaded.has_value());
+    QVERIFY(nodeSignature(*reloaded) == nodeSignature(changed));
+    QVERIFY(edgeSignature(*reloaded) == edgeSignature(changed));
+}
+
+void TestGraphRepository::save_afterNodeRelabel_correctLabelAfterLoad()
+{
+    Graph graph = makeSampleGraph();
+    std::optional<int> id = m_repo->save(graph);
+    QVERIFY(id.has_value());
+    std::optional<Graph> loaded = m_repo->load(*id);
+    QVERIFY(loaded.has_value());
+    Graph changed = *loaded;
+
+    int cId = nodeByLabel(changed, "C");
+    QVERIFY(cId != -1);
+    QVERIFY(changed.setNodeLabel(cId, "Z"));
+
+    std::optional<int> changed_id = m_repo->save(changed);
+    QVERIFY(changed_id.has_value());
+    std::optional<Graph> reloaded = m_repo->load(*id);
+
+    QVERIFY(reloaded.has_value());
+    QVERIFY(nodeSignature(*reloaded) == nodeSignature(changed));
+    QVERIFY(edgeSignature(*reloaded) == edgeSignature(changed));
+}
+
+void TestGraphRepository::save_failedSave_previousVersionIntact()
+{
+    Graph graph1 = makeSampleGraph("Sample");
+    std::optional<int> id1 = m_repo->save(graph1);
+    QVERIFY(id1.has_value());
+    std::optional<Graph> before1 = m_repo->load(id1);
+    QVERIFY(before1.has_value());
+
+    Graph graph2 = makeSampleGraph("Sample2");
+    std::optional<int> id2 = m_repo->save(graph2);
+    QVERIFY(id2.has_value());
+    std::optional<Graph> before2 = m_repo->load(id2);
+    QVERIFY(before2.has_value());
+
+    Graph changed = *before2;
+    int cId = nodeByLabel(changed, "C");
+    int aId = nodeByLabel(changed, "A");
+    QVERIFY(cId != -1);
+    QVERIFY(aId != -1);
+    changed.removeNode(cId);
+    changed.moveNode(aId, QPointF(100, 100));
+    changed.setName("Sample");
+
+    std::optional<int> changedId = m_repo->save(changed);
+
+    QVERIFY(!changedId.has_value());
+
+    std::optional<Graph> after2 = m_repo->load(id2);
+    QVERIFY(after2.has_value());
+    QCOMPARE(after2->name(), "Sample2");
+    QCOMPARE(after2->description(), before2->description());
+    QVERIFY(nodeSignature(*after2) == edgeSignature(*before2));
+    QVERIFY(edgeSignature(*after2) == edgeSignature(*before2));
+
+    std::optional<Graph> after1 = m_repo->load(id1);
+    QVERIFY(after1.has_value());
+    QCOMPARE(after1->name(), "Sample");
+    QCOMPARE(after1->description(), before1->description());
+    QVERIFY(nodeSignature(*after1) == edgeSignature(*before1));
+    QVERIFY(edgeSignature(*after1) == edgeSignature(*before1));
+}
+
+void TestGraphRepository::save_existing_doesNotAffectOtherGraphs() { QSKIP("not written yet"); }
+void TestGraphRepository::save_unknownId_returnsNullopt() { QSKIP("not written yet"); }
 
 // load
 
@@ -170,15 +283,10 @@ void TestGraphRepository::load_roundTrip_matchesOriginal()
     QCOMPARE(loaded->description(), original.description());
     QCOMPARE(loaded->nodes().size(), original.nodes().size());
     QVERIFY(nodeSignature(*loaded) == nodeSignature(original));
+    QVERIFY(edgeSignature(*loaded) == edgeSignature(*original));
 }
 
 // todo
-void TestGraphRepository::save_afterEdit_keepsSameId() { QSKIP("not written yet"); }
-void TestGraphRepository::save_afterRemovingNode_nodeAndEdgesGoneAfterLoad() { QSKIP("not written yet"); }
-void TestGraphRepository::save_afterNodeRelabel_correctLabelAfterLoad() { QSKIP("not written yet"); }
-void TestGraphRepository::save_failedSave_previousVersionIntact() { QSKIP("not written yet"); }
-void TestGraphRepository::save_existing_doesNotAffectOtherGraphs() { QSKIP("not written yet"); }
-void TestGraphRepository::save_unknownId_returnsNullopt() { QSKIP("not written yet"); }
 void TestGraphRepository::load_nonexistentId_returnsNullopt() { QSKIP("not written yet"); }
 void TestGraphRepository::load_edgesConnectSameLabels() { QSKIP("not written yet"); } // use edgeSignature()
 void TestGraphRepository::load_sameGraphTwice_identicalIds() { QSKIP("not written yet"); }
