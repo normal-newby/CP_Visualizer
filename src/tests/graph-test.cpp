@@ -1,5 +1,9 @@
 #include <QTest>
 
+#include <optional>
+#include <unordered_map>
+#include <vector>
+
 #include "components/graph.h"
 
 /* Remember to use:
@@ -50,7 +54,60 @@ private slots:
 
     // graph
     void defaultGraph_isEmptyWithIdMinusOne();
+
+    // assign id
+    void assignId_newGraph_setsId();
+    void assignId_alreadyHasId_rejectedAndIdUnchanged();
+    void assignId_nonPositiveId_rejected();
+
+    // restore
+    void restore_valid_preservesEverything();
+    void restore_emptyGraph_succeeds();
+    void restore_thenAdd_usesStoredNextIds();
+    void restore_nonPositiveGraphId_returnsNullopt();
+    void restore_negativeNodeOrEdgeId_returnsNullopt();
+    void restore_duplicateNodeId_returnsNullopt();
+    void restore_duplicateNodeLabel_returnsNullopt();
+    void restore_duplicateEdgeId_returnsNullopt();
+    void restore_edgeToMissingNode_returnsNullopt();
+    void restore_nextNodeIdNotAboveExisting_returnsNullopt();
+    void restore_nextEdgeIdNotAboveExisting_returnsNullopt();
+    void restore_negativeNextIds_returnsNullopt();
 };
+
+// helpers for restore
+
+static std::vector<Node> sampleNodes()
+{
+    return {
+        Node(0, "A", QPointF(1.5, -2.25)),
+        Node(2, "C", QPointF(10, 20)),
+        Node(3, "D", QPointF(-3, 4.75)),
+    };
+}
+
+static std::vector<Edge> sampleEdges()
+{
+    return {
+        Edge(1, 0, 2, 2.5, true),
+        Edge(2, 2, 0, -0.1, true),
+        Edge(3, 0, 2, 7.0, false),
+        Edge(4, 3, 3, 0.0, false),
+    };
+}
+
+// next ids deliberately larger than max id + 1
+static constexpr int kNextNodeId = 7;
+static constexpr int kNextEdgeId = 9;
+
+template <typename T>
+static std::unordered_map<int, T> byId(const std::vector<T>& items)
+{
+    std::unordered_map<int, T> out;
+    for (const T& item : items)
+        out.insert({item.id(), item});
+    return out;
+}
 
 void TestGraph::addNode_returnsIncreasingIds()
 {
@@ -428,6 +485,214 @@ void TestGraph::defaultGraph_isEmptyWithIdMinusOne()
     QVERIFY(g.description().isEmpty());
     QVERIFY(g.nodes().empty());
     QVERIFY(g.edges().empty());
+}
+
+// assign id
+
+void TestGraph::assignId_newGraph_setsId()
+{
+    Graph g(-1, "G", "");
+
+    bool ok = g.assignId(5);
+
+    QCOMPARE(ok, true);
+    QCOMPARE(g.id(), 5);
+}
+
+void TestGraph::assignId_alreadyHasId_rejectedAndIdUnchanged()
+{
+    Graph exists(3, "G", "");
+    Graph assigned(-1, "H", "");
+    QVERIFY(assigned.assignId(5));
+
+    bool ok = exists.assignId(7);
+    bool okTwice = assigned.assignId(7);
+
+    QCOMPARE(ok, false);
+    QCOMPARE(exists.id(), 3);
+    QCOMPARE(okTwice, false);
+    QCOMPARE(assigned.id(), 5);
+}
+
+void TestGraph::assignId_nonPositiveId_rejected()
+{
+    Graph g(-1, "G", "");
+
+    bool okZero = g.assignId(0);
+    bool okNegative = g.assignId(-3);
+
+    QCOMPARE(okZero, false);
+    QCOMPARE(okNegative, false);
+    QCOMPARE(g.id(), -1);
+}
+
+// restore
+
+void TestGraph::restore_valid_preservesEverything()
+{
+    const std::vector<Node> nodes = sampleNodes();
+    const std::vector<Edge> edges = sampleEdges();
+
+    std::optional<Graph> g = Graph::restore(4, "Restored", "a description", nodes, edges,
+                                            kNextNodeId, kNextEdgeId);
+
+    QVERIFY(g.has_value());
+    QCOMPARE(g->id(), 4);
+    QCOMPARE(g->name(), QString("Restored"));
+    QCOMPARE(g->description(), QString("a description"));
+    QVERIFY(g->nodes() == byId(nodes));
+    QVERIFY(g->edges() == byId(edges));
+    QCOMPARE(g->nextNodeId(), kNextNodeId);
+    QCOMPARE(g->nextEdgeId(), kNextEdgeId);
+}
+
+void TestGraph::restore_emptyGraph_succeeds()
+{
+    std::optional<Graph> g = Graph::restore(1, "Empty", "", {}, {}, 0, 0);
+
+    QVERIFY(g.has_value());
+    QCOMPARE(g->id(), 1);
+    QVERIFY(g->nodes().empty());
+    QVERIFY(g->edges().empty());
+    QCOMPARE(g->nextNodeId(), 0);
+    QCOMPARE(g->nextEdgeId(), 0);
+}
+
+void TestGraph::restore_thenAdd_usesStoredNextIds()
+{
+    std::optional<Graph> g = Graph::restore(1, "G", "", sampleNodes(), sampleEdges(),
+                                            kNextNodeId, kNextEdgeId);
+    QVERIFY(g.has_value());
+
+    int e = g->addNode("E", QPointF(0, 0));
+    int f = g->addNode("F", QPointF(0, 0));
+    int ef = g->addEdge(e, f);
+
+    // stored counters are used, not max id + 1 (which would reuse deleted ids 4 and 5)
+    QCOMPARE(e, kNextNodeId);
+    QCOMPARE(f, kNextNodeId + 1);
+    QCOMPARE(ef, kNextEdgeId);
+    QCOMPARE(g->nodes().size(), size_t(5));
+    QCOMPARE(g->edges().size(), size_t(5));
+}
+
+// ones that should fail
+
+void TestGraph::restore_nonPositiveGraphId_returnsNullopt()
+{
+    std::optional<Graph> zero = Graph::restore(0, "G", "", sampleNodes(), sampleEdges(),
+                                               kNextNodeId, kNextEdgeId);
+    std::optional<Graph> unsaved = Graph::restore(-1, "G", "", sampleNodes(), sampleEdges(),
+                                                  kNextNodeId, kNextEdgeId);
+
+    QVERIFY(!zero.has_value());
+    QVERIFY(!unsaved.has_value());
+}
+
+void TestGraph::restore_negativeNodeOrEdgeId_returnsNullopt()
+{
+    std::vector<Node> badNodes = sampleNodes();
+    badNodes.push_back(Node(-1, "X", QPointF(0, 0)));
+    std::vector<Edge> badEdges = sampleEdges();
+    badEdges.push_back(Edge(-1, 0, 2, 0.0, false));
+
+    std::optional<Graph> nodeCase = Graph::restore(1, "G", "", badNodes, sampleEdges(),
+                                                   kNextNodeId, kNextEdgeId);
+    std::optional<Graph> edgeCase = Graph::restore(1, "G", "", sampleNodes(), badEdges,
+                                                   kNextNodeId, kNextEdgeId);
+
+    QVERIFY(!nodeCase.has_value());
+    QVERIFY(!edgeCase.has_value());
+}
+
+void TestGraph::restore_duplicateNodeId_returnsNullopt()
+{
+    std::vector<Node> nodes = sampleNodes();
+    nodes.push_back(Node(2, "Z", QPointF(0, 0))); // id 2 already used
+
+    std::optional<Graph> g = Graph::restore(1, "G", "", nodes, sampleEdges(),
+                                            kNextNodeId, kNextEdgeId);
+
+    QVERIFY(!g.has_value());
+}
+
+void TestGraph::restore_duplicateNodeLabel_returnsNullopt()
+{
+    std::vector<Node> nodes = sampleNodes();
+    nodes.push_back(Node(5, "A", QPointF(0, 0))); // label "A" already used by node 0
+
+    std::optional<Graph> g = Graph::restore(1, "G", "", nodes, sampleEdges(),
+                                            kNextNodeId, kNextEdgeId);
+
+    QVERIFY(!g.has_value());
+}
+
+void TestGraph::restore_duplicateEdgeId_returnsNullopt()
+{
+    std::vector<Edge> edges = sampleEdges();
+    edges.push_back(Edge(3, 2, 3, 1.0, true)); // id 3 already used
+
+    std::optional<Graph> g = Graph::restore(1, "G", "", sampleNodes(), edges,
+                                            kNextNodeId, kNextEdgeId);
+
+    QVERIFY(!g.has_value());
+}
+
+void TestGraph::restore_edgeToMissingNode_returnsNullopt()
+{
+    // node 1 is not in sampleNodes()
+    std::vector<Edge> badSrc = sampleEdges();
+    badSrc.push_back(Edge(5, 1, 0, 0.0, true));
+    std::vector<Edge> badDest = sampleEdges();
+    badDest.push_back(Edge(5, 0, 1, 0.0, true));
+
+    std::optional<Graph> srcCase = Graph::restore(1, "G", "", sampleNodes(), badSrc,
+                                                  kNextNodeId, kNextEdgeId);
+    std::optional<Graph> destCase = Graph::restore(1, "G", "", sampleNodes(), badDest,
+                                                   kNextNodeId, kNextEdgeId);
+
+    QVERIFY(!srcCase.has_value());
+    QVERIFY(!destCase.has_value());
+}
+
+void TestGraph::restore_nextNodeIdNotAboveExisting_returnsNullopt()
+{
+    // highest node id in sampleNodes() is 3
+    std::optional<Graph> equal = Graph::restore(1, "G", "", sampleNodes(), sampleEdges(),
+                                                3, kNextEdgeId);
+    std::optional<Graph> below = Graph::restore(1, "G", "", sampleNodes(), sampleEdges(),
+                                                2, kNextEdgeId);
+    std::optional<Graph> justAbove = Graph::restore(1, "G", "", sampleNodes(), sampleEdges(),
+                                                    4, kNextEdgeId);
+
+    QVERIFY(!equal.has_value());
+    QVERIFY(!below.has_value());
+    QVERIFY(justAbove.has_value()); // boundary: max id + 1 is fine
+}
+
+void TestGraph::restore_nextEdgeIdNotAboveExisting_returnsNullopt()
+{
+    // highest edge id in sampleEdges() is 4
+    std::optional<Graph> equal = Graph::restore(1, "G", "", sampleNodes(), sampleEdges(),
+                                                kNextNodeId, 4);
+    std::optional<Graph> below = Graph::restore(1, "G", "", sampleNodes(), sampleEdges(),
+                                                kNextNodeId, 3);
+    std::optional<Graph> justAbove = Graph::restore(1, "G", "", sampleNodes(), sampleEdges(),
+                                                    kNextNodeId, 5);
+
+    QVERIFY(!equal.has_value());
+    QVERIFY(!below.has_value());
+    QVERIFY(justAbove.has_value()); // boundary: max id + 1 is fine
+}
+
+void TestGraph::restore_negativeNextIds_returnsNullopt()
+{
+    // empty graph, so "above every existing id" is trivially true; counters must still be >= 0
+    std::optional<Graph> nodeCase = Graph::restore(1, "G", "", {}, {}, -1, 0);
+    std::optional<Graph> edgeCase = Graph::restore(1, "G", "", {}, {}, 0, -1);
+
+    QVERIFY(!nodeCase.has_value());
+    QVERIFY(!edgeCase.has_value());
 }
 
 QTEST_APPLESS_MAIN(TestGraph)
