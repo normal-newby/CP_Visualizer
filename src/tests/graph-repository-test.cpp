@@ -118,6 +118,42 @@ void TestGraphRepository::cleanup()
     m_db.reset(); // closes and removes the connection
 }
 
+// save
+
+//new
+
+void TestGraphRepository::save_newGraph_returnsPositiveId()
+{
+    const Graph original = makeSampleGraph();
+
+    std::optional<int> id = m_repo->save(original);
+
+    QVERIFY(id.has_value());
+    QVERIFY(*id > 0);
+}
+
+void TestGraphRepository::save_emptyGraph_succeeds()
+{
+    const Graph empty = new Graph(-1, "Empty", "");
+
+    std::optional<int> id = m_repo->save(empty);
+
+    QVERIFY(id.has_value());
+    QVERIFY(*id > 0);
+}
+void TestGraphRepository::save_duplicateName_failsAndReturnsNullopt()
+{
+    const Graph original = makeSampleGraph();
+    Graph duplicate = new Graph();
+    duplicate.setName(original.name());
+
+    std::optional<int> original_id = m_repo->save(original);
+    std::optional<int> duplicate_id = m_repo->save(duplicate);
+
+    QVERITY(original_id.has_value());
+    QCOMPARE(!duplicate_id.has_value());
+}
+
 // load
 
 void TestGraphRepository::load_roundTrip_matchesOriginal()
@@ -137,10 +173,6 @@ void TestGraphRepository::load_roundTrip_matchesOriginal()
 }
 
 // todo
-
-void TestGraphRepository::save_newGraph_returnsPositiveId() { QSKIP("not written yet"); }
-void TestGraphRepository::save_emptyGraph_succeeds() { QSKIP("not written yet"); }
-void TestGraphRepository::save_duplicateName_failsAndReturnsNullopt() { QSKIP("not written yet"); }
 void TestGraphRepository::save_afterEdit_keepsSameId() { QSKIP("not written yet"); }
 void TestGraphRepository::save_afterRemovingNode_nodeAndEdgesGoneAfterLoad() { QSKIP("not written yet"); }
 void TestGraphRepository::save_afterNodeRelabel_correctLabelAfterLoad() { QSKIP("not written yet"); }
