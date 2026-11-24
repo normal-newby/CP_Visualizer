@@ -1,12 +1,66 @@
 #include "graph.h"
 #include "node.h"
 #include "edge.h"
+#include <unordered_set>
+#include <algorithm>
 
 Graph::Graph(int id, const QString& name, const QString& description)
     : m_id(id)
     , m_name(name)
     , m_description(description)
 {
+}
+
+bool Graph::assignId(int id)
+{
+    if (m_id != -1 || id <= 0) return false;
+    m_id = id;
+    return true;
+}
+
+std::optional<Graph> Graph::restore(int id, const QString& name, const QString& description,
+                             const std::vector<Node>& nodes, const std::vector<Edge>& edges,
+                             int nextNodeId, int nextEdgeId)
+{
+    // basic logic integrity check
+    if (id <= 0 || nextNodeId < 0 || nextEdgeId < 0) return std::nullopt;
+    std::unordered_set<int> nodeIds, edgeIds;
+    std::unordered_set<QString> nodeLabels;
+    int highestNodeId = -1, highestEdgeId = -1;
+
+    // node integrity check
+    for (const Node& node : nodes)
+    {
+        if (node.id() < 0) return std::nullopt;
+        if (nodeIds.count(node.id())) return std::nullopt;
+        if (nodeLabels.count(node.label())) return std::nullopt;
+        nodeIds.insert(node.id());
+        nodeLabels.insert(node.label());
+        highestNodeId = std::max(highestNodeId, node.id());
+    }
+
+    //edge integrity check
+    for (const Edge& edge : edges)
+    {
+        if (edge.id() < 0) return std::nullopt;
+        if (edgeIds.count(edge.id())) return std::nullopt;
+        if (!nodeIds.count(edge.src()) || !nodeIds.count(edge.dest())) return std::nullopt;
+        edgeIds.insert(edge.id());
+        highestEdgeId = std::max(highestEdgeId, edge.id());
+    }
+
+    if (nextNodeId <= highestNodeId || nextEdgeId <= highestEdgeId) return std::nullopt;
+
+    //build the return graph
+
+    Graph returnGraph(id, name, description);
+
+    for (const Node& node : nodes) returnGraph.m_nodes.insert({node.id(), node});
+    for (const Edge& edge : edges) returnGraph.m_edges.insert({edge.id(), edge});
+    returnGraph.m_nextNodeId = nextNodeId;
+    returnGraph.m_nextEdgeId = nextEdgeId;
+
+    return returnGraph;
 }
 
 int Graph::addNode(const QString& label, const QPointF pos)

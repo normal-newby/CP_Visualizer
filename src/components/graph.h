@@ -4,6 +4,8 @@
 #include <QString>
 #include <QPointF>
 #include <unordered_map>
+#include <optional>
+#include <vector>
 #include "node.h"
 #include "edge.h"
 
@@ -19,12 +21,20 @@ public:
     const QString& description() const { return m_description; }
     const std::unordered_map<int, Node>& nodes() const { return m_nodes; }
     const std::unordered_map<int, Edge>& edges() const { return m_edges; }
+    int nextNodeId() const { return m_nextNodeId; }
+    int nextEdgeId() const { return m_nextEdgeId; }
 
     //setters
-    void setName(const QString& name);
-    void setDescription(const QString& description);
+    void setName(const QString& name) { m_name = name; }
+    void setDescription(const QString& description) { m_description = description; }
+    bool assignId(int id); // to keep transient graph same as database; only if never saved and returned id > 0
 
     // BEHAVIOUR
+
+    // graph
+    static std::optional<Graph> restore(int id, const QString& name, const QString& description,
+                                        const std::vector<Node>& nodes, const std::vector<Edge>& edges,
+                                        int nextNodeId, int nextEdgeId);
 
     //nodes
     int addNode(const QString& label, const QPointF pos); //returns the new id generated, -1 if duplicate label
