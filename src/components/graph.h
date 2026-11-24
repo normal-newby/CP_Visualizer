@@ -29,7 +29,7 @@ public:
     //nodes
     int addNode(const QString& label, const QPointF pos); //returns the new id generated, -1 if duplicate label
     void moveNode(int id, const QPointF& pos);
-    void setNodeLabel(int id, const QString& name);
+    bool setNodeLabel(int id, const QString& name);
     void removeNode(int id); // also removes edges
 
     //edges

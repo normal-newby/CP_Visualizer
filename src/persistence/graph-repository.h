@@ -2,8 +2,11 @@
 #define GRAPHREPOSITORY_H
 
 #include <utility>
+#include <optional>
 #include <QString>
 #include <QList>
+#include <QSqlDatabase>
+#include "components/graph.h"
 
 struct GraphSummary
 {
@@ -14,10 +17,10 @@ struct GraphSummary
 class GraphRepository
 {
 public:
-    explicit GraphRepository(QString& connectionName) : m_conn(connectionName) {}
-    bool save(const Graph& graph); // insert if id is -1; update otherwise
+    explicit GraphRepository(const QString& connectionName) : m_conn(connectionName) {}
+    std::optional<int> save(const Graph& graph); // insert if id is -1; update otherwise
     std::optional<Graph> load(int id) const;
-    QList<GraphSummary> listSummaries();
+    QList<GraphSummary> listSummaries() const;
     bool remove(int id);
 
 

@@ -1,3 +1,6 @@
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QFile>
 #include "database.h"
 #include <QSqlDatabase>
 
@@ -16,7 +19,7 @@ Database::Database(const QString& path, const QString& connectionName)
     createSchema();
 }
 
-DataBase::~Database()
+Database::~Database()
 {
     {
         QSqlDatabase db = QSqlDatabase::database(m_name, false);
@@ -38,6 +41,7 @@ bool Database::createSchema()
     }
 
     const QString sql = QString::fromUtf8(file.readAll());
+    QSqlDatabase db = QSqlDatabase::database(m_name, false);
     db.transaction();
     QSqlQuery q(db);
     for (const QString& statement : sql.split(';', Qt::SkipEmptyParts))

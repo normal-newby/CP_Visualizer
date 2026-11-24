@@ -25,11 +25,15 @@ void Graph::moveNode(int id, const QPointF& pos)
     m_nodes.at(id).setPosition(pos);
 }
 
-void Graph::setNodeLabel(int id, const QString& label)
+bool Graph::setNodeLabel(int id, const QString& label)
 {
-    if (m_nodes.find(id) == m_nodes.end()) return;
+    if (m_nodes.find(id) == m_nodes.end()) return false;
+
+    for (const auto& [otherId, node] : m_nodes)
+        if (otherId != id && node.label() == label) return false;
 
     m_nodes.at(id).setLabel(label);
+    return true;
 }
 
 void Graph::removeNode(int id)

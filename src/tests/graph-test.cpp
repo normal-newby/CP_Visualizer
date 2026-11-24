@@ -26,6 +26,7 @@ private slots:
     // set node label
     void setNodeLabel_newLabelIsCorrect();
     void setNodeLabel_idDoesNotExistDoesNothing();
+    void setNodeLabel_rejectsDuplicateLabels();
 
     // remove node
     void removeNode_removesOnlyConnectedEdges();
@@ -128,9 +129,10 @@ void TestGraph::setNodeLabel_newLabelIsCorrect()
     Graph g;
 
     int a = g.addNode("A", QPointF(0, 0));
-    g.setNodeLabel(a, "B");
+    bool ok = g.setNodeLabel(a, "B");
 
     QCOMPARE(a, 0);
+    QCOMPARE(ok, true);
     QCOMPARE(g.nodes().size(), size_t(1));
     QCOMPARE(g.nodes().at(a).label(), QString("B"));
 }
@@ -140,10 +142,25 @@ void TestGraph::setNodeLabel_idDoesNotExistDoesNothing()
     Graph g;
 
     int a = g.addNode("A", QPointF(0, 0));
-    g.setNodeLabel(1, "B");
+    bool ok = g.setNodeLabel(1, "B");
 
+    QCOMPARE(ok, false);
     QCOMPARE(g.nodes().size(), size_t(1));
     QCOMPARE(g.nodes().at(a).label(), "A");
+}
+
+void TestGraph::setNodeLabel_rejectsDuplicateLabels()
+{
+    Graph g;
+    int a = g.addNode("A", QPointF(0, 0));
+    int b = g.addNode("B", QPointF(10, 10));
+
+    bool ok = g.setNodeLabel(a, "B");
+
+    QCOMPARE(ok, false);
+    QCOMPARE(g.nodes().size(), size_t(2));
+    QCOMPARE(g.nodes().at(a).label(), "A");
+    QCOMPARE(g.nodes().at(b).label(), "B");
 }
 
 void TestGraph::removeNode_removesOnlyConnectedEdges()

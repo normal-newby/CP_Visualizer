@@ -16,6 +16,7 @@ qt_add_library(cp_persistence STATIC
     src/persistence/database.h
     src/persistence/database.cpp
     src/persistence/graph-repository.h
+    src/persistence/graph-repository.cpp
 )
 target_link_libraries(cp_persistence PUBLIC cp_core Qt::Sql)
 
@@ -59,8 +60,9 @@ enable_testing()
 
 function(cp_add_test name)
     qt_add_executable(${name}-test src/tests/${name}-test.cpp)
-    target_link_libraries(${name}-test PRIVATE cp_core Qt::Test)
+    target_link_libraries(${name}-test PRIVATE cp_core cp_persistence Qt::Test)
     add_test(NAME ${name}-test COMMAND ${name}-test)
 endfunction()
 
 cp_add_test(graph)
+cp_add_test(graph-repository)
