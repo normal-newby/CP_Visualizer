@@ -18,7 +18,7 @@ class GraphRepository
 {
 public:
     explicit GraphRepository(const QString& connectionName) : m_conn(connectionName) {}
-    std::optional<int> save(const Graph& graph); // insert if id is -1; update otherwise
+    std::optional<int> save(Graph& graph); // insert if id is -1; update otherwise
     std::optional<Graph> load(int id) const;
     QList<GraphSummary> listSummaries() const;
     bool remove(int id);

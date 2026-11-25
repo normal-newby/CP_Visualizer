@@ -1,6 +1,6 @@
 #include "graph-repository.h"
 
-std::optional<int> GraphRepository::save(const Graph& graph)
+std::optional<int> GraphRepository::save(Graph& graph)
 {
     Q_UNUSED(graph);
     return std::nullopt;

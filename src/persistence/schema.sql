@@ -1,7 +1,9 @@
 CREATE TABLE IF NOT EXISTS graph (
     graph_id INTEGER PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
-    description TEXT
+    description TEXT,
+    next_node_id INTEGER NOT NULL DEFAULT 0,
+    next_edge_id INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS node (
@@ -11,6 +13,7 @@ CREATE TABLE IF NOT EXISTS node (
     x REAL NOT NULL,
     y REAL NOT NULL,
     PRIMARY KEY(graph_id, node_id),
+    UNIQUE (graph_id, node_label),
     FOREIGN KEY (graph_id) REFERENCES graph(graph_id) ON DELETE CASCADE
 );
 
